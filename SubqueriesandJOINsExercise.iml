@@ -1,8 +1,145 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<module type="GENERAL_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="true">
-    <exclude-output />
-    <content url="file://$MODULE_DIR$" />
-    <orderEntry type="sourceFolder" forTests="false" />
-  </component>
-</module>
+use soft_uni;
+# 01. Employee Address
+
+select e.employee_id, e.job_title, a.address_id, a.address_text
+from employees as e
+         join addresses as a on e.address_id = a.address_id
+order by a.address_id
+limit 5;
+
+# 02. Addresses with Towns
+
+select e.first_name, e.last_name, t.name as town, a.address_text
+from employees as e
+         join addresses as a on e.address_id = a.address_id
+         join towns as t on a.town_id = t.town_id
+order by e.first_name, e.last_name
+limit 5;
+
+# 03. Sales Employee
+
+select e.employee_id, e.first_name, e.salary, d.department_id
+from employees as e
+         join departments as d on e.department_id = d.department_id
+where e.salary > 15000
+order by d.department_id desc
+limit 5;
+# 05. Employees Without Project
+select e.employee_id, e.first_name
+from employees as e
+         left join employees_projects as ep on e.employee_id = ep.employee_id
+where ep.project_id is null
+order by e.employee_id desc
+limit 3;
+
+
+# 06. Employees Hired After
+select e.first_name, e.last_name, e.hire_date, d.name as dept_name
+from employees as e
+         join
+     departments as d on e.department_id = d.department_id
+where e.hire_date > '1999-01-01'
+  and d.name in ('Sales', 'Finance')
+order by e.hire_date;
+
+
+#07. Employees with Project
+select e.employee_id, e.first_name, p.name as project_name
+from employees as e
+         join employees_projects as ep on e.employee_id = ep.employee_id
+         join projects as p on p.project_id = ep.project_id
+where date(p.start_date) > '2002-08-13'
+  and p.end_date is null
+order by e.first_name, p.name
+limit 5;
+
+#08. Employee 24
+select e.employee_id, e.first_name, if(year(p.start_date) >= 2005, null, p.name) as project_name
+from employees as e
+         join employees_projects as ep on e.employee_id = ep.employee_id
+         join projects as p on p.project_id = ep.project_id
+where e.employee_id = 24
+order by p.name;
+
+# 10. Employee Summary
+select e.employee_id,
+       concat_ws(' ', e.first_name, e.last_name) as emploee_name,
+       concat_ws(' ', m.first_name, m.last_name) as manager_name,
+       d.name
+from employees as e
+         join employees as m on e.manager_id = m.employee_id
+         join departments as d on e.department_id = d.department_id
+order by e.employee_id
+limit 5;
+
+# 11. Min Average Salary
+select avg(e.salary) as avg_salary
+from employees as e
+group by e.department_id
+order by avg_salary limit 1;
+
+use geography;
+# 12. Highest Peaks in Bulgaria
+select c.country_code, m.mountain_range, p.peak_name, p.elevation
+from countries as c
+         join mountains_countries as mc on c.country_code = mc.country_code
+         join mountains as m on mc.mountain_id = m.id
+         join peaks as p on m.id = p.mountain_id
+where country_name = 'Bulgaria'
+  and p.elevation > 2835
+order by p.elevation desc;
+
+# 13. Count Mountain Ranges
+select c.country_code, count(mc.mountain_id) as mountain_ranges_count
+from countries as c
+         join mountains_countries as mc on c.country_code = mc.country_code
+group by c.country_code
+having c.country_code in ('BG', 'US', 'RU')
+order by mountain_ranges_count desc;
+
+# 14. Countries with Rivers
+select c.country_name, r.river_name
+from countries as c
+         left join countries_rivers as cr on c.country_code = cr.country_code
+         left join rivers as r on r.id = cr.river_id
+         join continents as co on c.continent_code = co.continent_code
+where c.continent_code = 'AF'
+order by c.country_name
+limit 5;
+
+# 15. *Continents and Currencies
+select c.continent_code, currency_code, count(*) as currency_usage
+from countries as c
+group by continent_code, c.currency_code
+having currency_usage > 1
+   and currency_usage = (select count(*) as count_of_currencies
+                         from countries as c2
+                         where c2.continent_code = c.continent_code
+                         group by c2.currency_code
+                         order by count_of_currencies desc
+                         limit 1)
+order by c.continent_code, c.currency_code;
+
+# 16. Countries without any Mountains
+
+SELECT
+    COUNT(*) AS country_count
+FROM
+    (SELECT
+         mc.country_code AS 'mc_country_code'
+     FROM
+         mountains_countries AS mc
+     GROUP BY mc.country_code) AS d
+        RIGHT JOIN
+    countries AS c ON c.country_code = d.mc_country_code
+WHERE
+    d.mc_country_code IS NULL;
+
+# 17. Highest Peak and Longest River by Country
+
+
+
+
+
+
+
