@@ -127,27 +127,48 @@ ORDER BY u.id;
 
 SELECT 
     p.id AS photo_id,
-    COUNT(l.id) AS likes_count,
-    COUNT(c.id) AS comments_count
+    COUNT(DISTINCT l.id) AS 'count_of_likes',
+    COUNT(DISTINCT c.id) AS 'count_of_comments'
 FROM
     photos AS p
-        JOIN
-    users_photos AS up ON p.id = up.photo_id
-        JOIN
-    likes AS l ON up.photo_id = l.photo_id
-        JOIN
-    comments AS c ON l.photo_id = c.id
-ORDER BY likes_count DESC , comments_count DESC , photo_id;
+        LEFT JOIN
+    likes AS l ON p.id = l.photo_id
+        LEFT JOIN
+    comments AS c ON p.id = c.photo_id
+GROUP BY p.id
+ORDER BY count_of_likes DESC , count_of_comments DESC , p.id;
 
 # 09. The Photo on the Tenth Day of the Month
 
+SELECT 
+#concat(left(p.description,30))
+    CONCAT(SUBSTRING(p.description, 1, 30),'...') AS summary, date
+FROM
+    photos AS p
+WHERE
+    DAY(date) = 10
+ORDER BY date DESC;
 
+# 10. Get user’s photos count
+DELIMITER $$
+create function udf_users_photos_count(username VARCHAR(30))
+returns int
+deterministic
+begin
+DECLARE photosCount INT;
+set photosCount:=(
+SELECT 
+    COUNT(p.id)
+FROM
+    photos AS p
+        RIGHT JOIN
+    users_photos AS up ON p.id = up.user_id
+GROUP BY up.user_id);
 
+RETURN photosCount;
+END$$
 
-
-
-
-
+create procedure udp_modify_user
 
 
 
