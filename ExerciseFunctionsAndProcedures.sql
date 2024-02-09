@@ -142,7 +142,7 @@ begin
              join accounts a on ah.id = a.account_holder_id
     group by ah.id
     having sum(a.balance) > target_salary
-    order by ah.id
+    order by ah.id;
     #     where target_salary < (select sum(balance)
 #                            from accounts
 #                            where  accounts.account_holder_id = ah.id
@@ -207,12 +207,12 @@ begin
         update accounts
         set balance = balance + money_amount
         where id = acc_id;
-commit ;
-        end if;
+        commit;
+    end if;
 
-    end;
+end;
 
-call usp_deposit_money(1,10);
+call usp_deposit_money(1, 10);
 
 # 13
 create procedure
@@ -221,52 +221,71 @@ create procedure
 begin
     start transaction ;
     if ((select count(*) from accounts where id = acc_id) <> 1 or
-        ((select balance from  accounts where id = acc_id) < money_amount) or
+        ((select balance from accounts where id = acc_id) < money_amount) or
         money_amount < 0) then
         rollback ;
     else
         update accounts
         set balance = balance - money_amount
         where id = acc_id;
-        commit ;
+        commit;
     end if;
 
 end;
 
 drop procedure usp_withdraw_money;
 
-call usp_withdraw_money(1,10);
+call usp_withdraw_money(1, 10);
 
 #14
 
+create procedure
+    usp_transfer_money(
+    acc_id int, target_id int, money_amount decimal(19, 4))
+
+begin
+    start transaction ;
+    if ((select count(*) from accounts where id = acc_id) <> 1 or
+        (select count(*) from accounts where id = target_id) <> 1 or
+        acc_id = target_id or
+        ((select balance from accounts where id = acc_id) < money_amount) or
+        money_amount < 0) then
+        rollback;
+    else
+        update accounts
+        set balance = balance - money_amount
+        where id = acc_id;
+        update accounts
+        set balance = balance + money_amount
+        where id = target_id;
+        commit;
+    end if;
+
+end;
+
+call usp_transfer_money(2,1,10);
 
 
+# 15
 
+create table logs(
+    log_id int primary key auto_increment
+                 , account_id int not null
+                 , old_sum decimal(19,4)
+                 , new_sum decimal(19,4));
+delimiter $$
+create trigger tr_update
+after update
+    on accounts
+    for each row
+    begin
+        insert into  logs(account_id, old_sum, new_sum)
+            values (old.id,old.balance,new.balance);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    end $$
+delimiter ;
+call usp_deposit_money(1,10);
+select * from logs;
 
 
 
